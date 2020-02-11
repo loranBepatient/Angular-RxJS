@@ -35,12 +35,11 @@ export class ProductService {
     map(([products, categories]) =>
       products.map(
         product =>
-          (({
+          ({
             ...product,
             price: product.price * 1.5,
-            searchKey: product.productName,
             category: categories.find(c => product.categoryId === c.id).name
-          } as unknown) as Product)
+          } as Product)
       )
     )
   );

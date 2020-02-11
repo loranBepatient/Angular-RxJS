@@ -8,7 +8,7 @@ export interface Product {
   description?: string;
   price?: number;
   categoryId?: number;
-  category: ProductCategory["name"];
+  category?: ProductCategory["name"];
   quantityInStock?: number;
   searchKey?: string[];
   supplierIds?: number[];
