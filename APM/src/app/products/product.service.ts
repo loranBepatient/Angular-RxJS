@@ -1,13 +1,19 @@
 import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 
-import { Observable, throwError, combineLatest } from "rxjs";
-import { catchError, tap, map } from "rxjs/operators";
+import {
+  Observable,
+  throwError,
+  combineLatest,
+  BehaviorSubject,
+  Subject,
+  merge
+} from "rxjs";
+import { catchError, tap, map, scan, shareReplay } from "rxjs/operators";
 
 import { Product } from "./product";
 import { Supplier } from "../suppliers/supplier";
 import { SupplierService } from "../suppliers/supplier.service";
-import { ProductCategory } from "../product-categories/product-category";
 import { ProductCategoryService } from "../product-categories/product-category.service";
 
 @Injectable({
@@ -15,7 +21,6 @@ import { ProductCategoryService } from "../product-categories/product-category.s
 })
 export class ProductService {
   private productsUrl = "api/products";
-  private productCategoriesUrl = "api/productCategories";
   private suppliersUrl = this.supplierService.suppliersUrl;
 
   constructor(
@@ -24,9 +29,14 @@ export class ProductService {
     private supplierService: SupplierService
   ) {}
 
-  public products$ = this.http
-    .get<Product[]>(this.productsUrl)
-    .pipe(catchError(this.handleError));
+  private selectedIdSubject = new BehaviorSubject<number>(0);
+  selectedIdAction$ = this.selectedIdSubject.asObservable();
+
+  public products$ = this.http.get<Product[]>(this.productsUrl).pipe(
+    shareReplay(1),
+    tap(productList => console.log("productList: ", productList)),
+    catchError(this.handleError)
+  );
 
   public productsWithCategories$ = combineLatest([
     this.products$,
@@ -44,6 +54,26 @@ export class ProductService {
     )
   );
 
+  public selectedProduct$ = combineLatest([
+    this.productsWithCategories$,
+    this.selectedIdAction$
+  ]).pipe(
+    map(([products, id]) => products.find(product => product.id === id)),
+    tap(selected => console.log("selected ", selected))
+  );
+
+  setSelected(id: number): void {
+    this.selectedIdSubject.next(id);
+  }
+
+  private productInsertedSubject = new Subject<Product>();
+  productInsertedAction$ = this.productInsertedSubject.asObservable();
+
+  productsWithAdd$ = merge(
+    this.productsWithCategories$,
+    this.productInsertedAction$
+  ).pipe(scan((acc: Product[], value: Product) => [...acc, value]));
+
   private fakeProduct() {
     return {
       id: 42,
@@ -55,6 +85,10 @@ export class ProductService {
       category: "Toolbox",
       quantityInStock: 30
     };
+  }
+
+  addProduct(newProduct?: Product): void {
+    this.productInsertedSubject.next(newProduct || this.fakeProduct());
   }
 
   private handleError(err: any): Observable<never> {

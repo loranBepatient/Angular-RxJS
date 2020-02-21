@@ -3,6 +3,8 @@
     {{ pageTitle }}
   </div>
 
+  <!-- <pre>{{ filteredProducts$ | async | json }}</pre> -->
+
   <div class="card-body">
     <div class="container">
       <div class="row justify-content-between">
@@ -12,9 +14,11 @@
             (change)="onSelected($event.target.value)"
           >
             <option value="0">- Display All -</option>
-            <option *ngFor="let category of categories" [value]="category.id">{{
-              category.name
-            }}</option>
+            <option
+              *ngFor="let category of categories$ | async"
+              [value]="category.id"
+              >{{ category.name }}</option
+            >
           </select>
         </div>
         <div class="col-2">
