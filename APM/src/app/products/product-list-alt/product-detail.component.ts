@@ -1,8 +1,7 @@
-import { Component, ChangeDetectionStrategy } from "@angular/core";
-
-import { ProductService } from "../product.service";
-import { catchError } from "rxjs/operators";
+import { ChangeDetectionStrategy, Component } from "@angular/core";
 import { EMPTY, Subject } from "rxjs";
+import { catchError } from "rxjs/operators";
+import { ProductService } from "../product.service";
 
 @Component({
   selector: "pm-product-detail",

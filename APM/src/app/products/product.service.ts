@@ -7,14 +7,26 @@ import {
   combineLatest,
   BehaviorSubject,
   Subject,
-  merge
+  merge,
+  from
 } from "rxjs";
-import { catchError, tap, map, scan, shareReplay } from "rxjs/operators";
+import {
+  catchError,
+  tap,
+  map,
+  scan,
+  shareReplay,
+  mergeMap,
+  toArray,
+  filter,
+  concatMap,
+  switchMap
+} from "rxjs/operators";
 
 import { Product } from "./product";
-import { Supplier } from "../suppliers/supplier";
 import { SupplierService } from "../suppliers/supplier.service";
 import { ProductCategoryService } from "../product-categories/product-category.service";
+import { Supplier } from "../suppliers/supplier";
 
 @Injectable({
   providedIn: "root"
@@ -60,15 +72,27 @@ export class ProductService {
     tap(selected => console.log("selected ", selected))
   );
 
-  public selectedProductSuppliers$ = combineLatest([
-    this.selectedProduct$,
-    this.supplierService.suppliers$
-  ]).pipe(
-    map(([product, suppliers]) => {
-      return suppliers.filter(supplier =>
-        product.supplierIds.includes(supplier.id)
-      );
-    })
+  // public selectedProductSuppliers$ = combineLatest([
+  //   this.selectedProduct$,
+  //   this.supplierService.suppliers$
+  // ]).pipe(
+  //   map(([product, suppliers]) => {
+  //     return suppliers.filter(supplier =>
+  //       product.supplierIds.includes(supplier.id)
+  //     );
+  //   })
+  // );
+
+  public selectedProductSuppliers$ = this.selectedProduct$.pipe(
+    filter(selectedProduct => Boolean(selectedProduct)),
+    switchMap(selectProduct =>
+      from(selectProduct.supplierIds).pipe(
+        mergeMap(supplierId =>
+          this.http.get<Supplier>(`${this.suppliersUrl}/${supplierId}`)
+        ),
+        toArray()
+      )
+    )
   );
 
   setSelected(id: number): void {
