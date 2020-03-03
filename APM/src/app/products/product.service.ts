@@ -32,11 +32,9 @@ export class ProductService {
   private selectedIdSubject = new BehaviorSubject<number>(0);
   selectedIdAction$ = this.selectedIdSubject.asObservable();
 
-  public products$ = this.http.get<Product[]>(this.productsUrl).pipe(
-    shareReplay(1),
-    tap(productList => console.log("productList: ", productList)),
-    catchError(this.handleError)
-  );
+  public products$ = this.http
+    .get<Product[]>(this.productsUrl)
+    .pipe(shareReplay(1), catchError(this.handleError));
 
   public productsWithCategories$ = combineLatest([
     this.products$,
@@ -60,6 +58,17 @@ export class ProductService {
   ]).pipe(
     map(([products, id]) => products.find(product => product.id === id)),
     tap(selected => console.log("selected ", selected))
+  );
+
+  public selectedProductSuppliers$ = combineLatest([
+    this.selectedProduct$,
+    this.supplierService.suppliers$
+  ]).pipe(
+    map(([product, suppliers]) => {
+      return suppliers.filter(supplier =>
+        product.supplierIds.includes(supplier.id)
+      );
+    })
   );
 
   setSelected(id: number): void {
